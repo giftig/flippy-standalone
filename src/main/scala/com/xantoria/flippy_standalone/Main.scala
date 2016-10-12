@@ -49,6 +49,7 @@ object Main {
         logger.error("Failed to bind to the interface! Shutting down...")
         System.exit(1)
       }
+      case _ => ()
     }
   }
 }
