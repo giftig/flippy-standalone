@@ -1,9 +1,12 @@
 package com.xantoria.flippy_standalone
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 import akka.actor._
 import akka.io.{IO => AkkaIO}
+import akka.pattern.ask
+import akka.util.Timeout
 import net.liftweb.json.Formats
 import org.slf4j.LoggerFactory
 import spray.can.Http
@@ -21,8 +24,8 @@ object Main {
     logger.info(s"Starting flippy service on ${cfg.interface}:${cfg.port}...")
 
     implicit val ec = ExecutionContext.global
-    implicit val system = ActorSystem("flippy")
     implicit val formats: Formats = DefaultFormats
+    implicit val timeout = Timeout(5.seconds)
 
     // TODO: Support more than just redis
     val backend: Backend = cfg.backend match {
@@ -38,7 +41,14 @@ object Main {
       case "in-memory" => ???
     }
 
+    implicit val system = ActorSystem("flippy")
     val service = system.actorOf(Props(new FlippyAPI(backend)))
-    AkkaIO(Http) ! Http.Bind(service, interface = cfg.interface, port = cfg.port)
+    val bindResult = AkkaIO(Http) ? Http.Bind(service, interface = cfg.interface, port = cfg.port)
+    bindResult foreach {
+      case failure: Http.CommandFailed => {
+        logger.error("Failed to bind to the interface! Shutting down...")
+        System.exit(1)
+      }
+    }
   }
 }
