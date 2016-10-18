@@ -16,8 +16,8 @@ You can simply grab the jar and run it, specifying the interface to run on, the 
 want, and where to find the backend, or you can grab the docker image, which is the jar ready
 to go in a java-8 environment.
 
-    docker pull giftig/flippy:0.1.2
-    docker run giftig/flippy:-0.1.2 \
+    docker pull giftig/flippy:latest
+    docker run giftig/flippy:latest \
       --interface 0.0.0.0 \
       --port 80 --backend \
       redis --backend-host \
