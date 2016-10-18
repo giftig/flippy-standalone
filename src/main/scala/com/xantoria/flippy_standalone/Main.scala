@@ -47,6 +47,7 @@ object Main {
     bindResult foreach {
       case failure: Http.CommandFailed => {
         logger.error("Failed to bind to the interface! Shutting down...")
+        logger.error("Details: %s", failure)
         System.exit(1)
       }
       case _ => ()
