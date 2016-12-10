@@ -6,8 +6,14 @@ case class Config(
   interface: String = "0.0.0.0",
   port: Int = 80,
   backend: String = "redis",
-  backendHost: Option[String] = None,
-  backendPort: Option[Int] = None
+  redis: Option[RedisConfig] = Some(RedisConfig())
+)
+
+case class RedisConfig(
+  host: String = "localhost",
+  port: Int = 6379,
+  namespace: String = "flippy",
+  useHash: Boolean = false
 )
 
 object Config {
@@ -25,7 +31,10 @@ object Config {
     }.text("Port on which to serve API. Default 80")
 
     opt[String]('b', "backend").action {
-      (v, c) => c.copy(backend = v)
+      (v, c) => v match {
+        case "redis" => c.copy(backend = v)
+        case _ => c.copy(backend = v, redis = None)
+      }
     }.validate {
       v => if (supportedBackends.contains(v)) {
         success
@@ -35,11 +44,27 @@ object Config {
     }.text("Database backend to use. Default is redis.")
 
     opt[String]("backend-host").action {
-      (v, c) => c.copy(backendHost = Some(v))
+      (v, c) => c.backend match {
+        case "redis" => c.copy(redis = c.redis map { _.copy(host = v) })
+      }
     }.text("Host where the backend runs, if applicable")
 
     opt[Int]("backend-port").action {
-      (v, c) => c.copy(backendPort = Some(v))
+      (v, c) => c.backend match {
+        case "redis" => c.copy(redis = c.redis map { _.copy(port = v) })
+      }
     }.text("Port on which the backend runs, if applicable")
+
+    opt[String]("redis-key").action {
+      (v, c) => c.backend match {
+        case "redis" => c.copy(redis = c.redis map { _.copy(namespace = v, useHash = true) })
+      }
+    }
+
+    opt[String]("redis-prefix").action {
+      (v, c) => c.backend match {
+        case "redis" => c.copy(redis = c.redis map { _.copy(namespace = v, useHash = false) })
+      }
+    }
   }
 }

@@ -18,30 +18,33 @@ import com.xantoria.flippy_standalone.config.Config
 
 object Main {
   private val logger = LoggerFactory.getLogger("main")
+  private implicit val ec = ExecutionContext.global
+  private implicit val formats: Formats = DefaultFormats
+
+  // TODO: Support more backends
+  def configureBackend(cfg: Config): Backend = cfg.backend match {
+    case "redis" => {
+      val redis = cfg.redis.get
+
+      if (redis.useHash) {
+        new RedisHashBackend(redis.host, redis.port, redis.namespace)
+      } else {
+        new RedisBackend(redis.host, redis.port, redis.namespace)
+      }
+    }
+    case "mirror" => ???
+    case "in-memory" => ???
+  }
 
   def main(args: Array[String]): Unit = {
     val cfg = Config.parser.parse(args, Config()).get
     logger.info(s"Starting flippy service on ${cfg.interface}:${cfg.port}...")
 
-    implicit val ec = ExecutionContext.global
-    implicit val formats: Formats = DefaultFormats
+    val backend = configureBackend(cfg)
+
     implicit val timeout = Timeout(5.seconds)
-
-    // TODO: Support more than just redis
-    val backend: Backend = cfg.backend match {
-      case "redis" => {
-        if (cfg.backendHost.isEmpty || cfg.backendPort.isEmpty) {
-          throw new IllegalArgumentException("Redis requires a backend host and port")
-        }
-
-        // TODO: Allow configuring prefix
-        new RedisBackend(cfg.backendHost.get, cfg.backendPort.get, "flippy")
-      }
-      case "mirror" => ???
-      case "in-memory" => ???
-    }
-
     implicit val system = ActorSystem("flippy")
+
     val service = system.actorOf(Props(new FlippyAPI(backend)))
     val bindResult = AkkaIO(Http) ? Http.Bind(service, interface = cfg.interface, port = cfg.port)
     bindResult foreach {
