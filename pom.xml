@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.xantoria</groupId>
   <artifactId>flippy-standalone</artifactId>
-  <version>0.2.1-SNAPSHOT</version>
+  <version>0.2.2-SNAPSHOT</version>
 
   <properties>
     <project.build.scalaVersion>2.10.4</project.build.scalaVersion>
@@ -100,7 +100,7 @@
     <dependency>
       <groupId>com.xantoria</groupId>
       <artifactId>flippy</artifactId>
-      <version>0.2.1-SNAPSHOT</version>
+      <version>0.2.2-SNAPSHOT</version>
     </dependency>
 
     <!-- Shell flags -->
